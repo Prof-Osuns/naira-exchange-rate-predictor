@@ -10,7 +10,56 @@ st.set_page_config(page_title="Naira Exchange Rate Predictor", page_icon="💱",
 # Load data and model
 @st.cache_resource
 def load_model_and_data():
-    # Load model
+    import os
+
+    # Check if model files exist
+    if not os.path.exists('prophet_model.pkl') or not os.path.exists('exchange_rates.csv'):
+        st.info("Setting up for first time... This will take 2-3 minutes.")
+
+        # Fetch data
+        import yfinance as yf
+
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=730)
+
+        ticker = "NGN=X"
+        df_raw = yf.download(ticker, start=start_date, end=end_date, progress=False)
+        df_raw = df_raw.reset_index()
+        df_historical = df_raw[['Date', 'Close']]
+        df_historical.columns = ['date', 'rate']
+        df_historical = df_historical.dropna()
+        df_historical.to_csv('exchange_rates.csv', index=False)
+
+        # Train model
+        from prophet import Prophet
+
+        df_prophet = df_historical.copy()
+        df_prophet.columns = ['ds', 'y']
+        df_prophet['ds'] = pd.to_datetime(df_prophet['ds'])
+
+        model = Prophet(
+            daily_seasonality=False,
+            weekly_seasonality=True,
+            yearly_seasonality=True,
+            changepoint_prior_scale=0.05 # Makes model more flexible to changes'
+        )
+
+        model.fit(df_prophet)
+
+        # Generate forecast
+        future = model.make_future_dataframe(periods=30)
+        df_forecast = model.predict(future)
+
+        # Save everything
+        with open('prophet_model.pkl', 'wb') as f:
+            pickle.dump(model, f)
+
+        df_forecast.to_csv('forecast.csv', index=False)
+
+        st.success("Setup complete!")
+
+
+    # Load existing files
     with open('prophet_model.pkl', 'rb') as f:
         model = pickle.load(f)
 
