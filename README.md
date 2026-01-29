@@ -3,7 +3,7 @@
 An AI-powered forecasting system that predicts USD/NGN exchange rates for the next 30 days with 95% confidence intervals, helping Nigerians and businesses make informed financial decisions.
 
 ## Live Demo
-[Try it here](#) *(link after deployment)*
+[Try it here](https://naira-exchange-rate-predictor.streamlit.app/) 
 
 ## Why This Matters
 
